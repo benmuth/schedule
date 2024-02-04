@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -25,11 +26,24 @@ type model struct {
 	activities []string         // what to do in each block of time
 	cursor     int              // which time block our cursor is pointing at
 	selected   map[int]struct{} // which time blocks are selected
+
+	textInput textinput.Model
+	editing   bool
+	err       error
 }
 
+type errMsg error
+
 func initialModel() model {
+	ti := textinput.New()
+	ti.Placeholder = "Enter an activity"
+	ti.Blur()
+	ti.CharLimit = 156
+	ti.Width = 20
+
 	blocks := hoursInDay * blocksPerHour
 	activities := make([]string, blocks)
+
 	return model{
 		time: 60 * hoursInDay,
 
@@ -37,10 +51,12 @@ func initialModel() model {
 		// Our to-do list is a grocery list
 		activities: activities,
 
-		// A map which indicates which choices are selected. We're using
-		// the  map like a mathematical set. The keys refer to the indexes
-		// of the `choices` slice, above.
+		// A map which indicates which choices are selected. The keys refer to the indices
+		// of the `activities` slice.
 		selected: make(map[int]struct{}),
+
+		textInput: ti,
+		err:       nil,
 	}
 }
 
@@ -51,34 +67,32 @@ func initialModel() model {
 
 func (m model) Init() tea.Cmd {
 	// Just return `nil`, which means "no I/O right now, please."
-	return nil
+	return textinput.Blink
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	m.textInput, cmd = m.textInput.Update(msg)
+
 	switch msg := msg.(type) {
 	// Is it a key press?
 	case tea.KeyMsg:
-
-		// Cool, what was the actual key pressed?
 		switch msg.String() {
 
-		// These keys should exit the program.
 		case "ctrl+c", "q":
 			return m, tea.Quit
 
-		// The "up" and "k" keys move the cursor up
 		case "up", "k":
-			if m.cursor > 0 {
+			if m.cursor > 0 && !m.editing {
 				m.cursor--
 			}
 
-		// The "down" and "j" keys move the cursor down
 		case "down", "j":
-			if m.cursor < len(m.activities)-1 {
+			if m.cursor < len(m.activities)-1 && !m.editing {
 				m.cursor++
 			}
 
-		// The "enter" key and the spacebar (a literal space) toggle
+		// The "enter" key and the spacebar toggle
 		// the selected state for the item that the cursor is pointing at.
 		case "enter", " ":
 			_, ok := m.selected[m.cursor]
@@ -87,35 +101,59 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.selected[m.cursor] = struct{}{}
 			}
+		case "i":
+			if !m.textInput.Focused() {
+				m.textInput.SetValue(m.activities[m.cursor])
+				m.textInput.Focus()
+				m.editing = true
+			}
+		case "esc":
+			if m.textInput.Focused() {
+				m.textInput.Blur()
+				m.activities[m.cursor] = m.textInput.Value()
+				m.editing = false
+				m.textInput.Reset()
+			}
 		}
+
+	case errMsg:
+		m.err = msg
+		return m, nil
 	}
 
-	// Return the updated model to the Bubble Tea runtime for processing.
-	// Note that we're not returning a command.
-	return m, nil
+	// Return the updated model to the Bubble Tea runtime
+	return m, cmd
 }
 
 func (m model) View() string {
 	// The header
 	s := "Schedule:\n\n----------------\n"
 
+	// s += fmt.Sprintf("editing: %v\n", m.editing)
 	// Iterate over our choices
-	for i, choice := range m.activities {
+	for i, activity := range m.activities {
 
 		// Is the cursor pointing at this choice?
 		cursor := " " // no cursor
 		if m.cursor == i {
 			cursor = ">" // cursor!
+			// if m.editing {
+			// s += m.textInput.View()
+			// }
 		}
 
 		// Is this choice selected?
-		checked := " " // not selected
-		if _, ok := m.selected[i]; ok {
-			checked = "x" // selected!
-		}
+		// checked := " " // not selected
+		// if _, ok := m.selected[i]; ok {
+		// 	checked = "x" // selected!
+		// }
 
 		// Render the row
-		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
+		if m.editing && m.cursor == i {
+			s += fmt.Sprintf("%s\n", m.textInput.View())
+		} else {
+			s += fmt.Sprintf("%s %s\n", cursor, activity)
+		}
 		s += "----------------\n"
 	}
 
