@@ -4,13 +4,27 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
-const hoursInDay = 8
+const (
+	hoursInDay = 8
+	// BUG: selections are weird if blocksPerHour is 2 and hoursInDay is 8
+	blocksPerHour = 1
 
-const blocksPerHour = 1
+	taskBackgroundColor = "21"
+	blockWidth          = 40
+)
+
+// styles
+var (
+	normalTask   = lipgloss.NewStyle().Width(blockWidth).Margin(1, 0, 0).Border(lipgloss.NormalBorder(), true)
+	selectedTask = normalTask.Copy().Background(lipgloss.Color(taskBackgroundColor))
+)
 
 func main() {
 	p := tea.NewProgram(initialModel())
@@ -21,25 +35,31 @@ func main() {
 }
 
 type model struct {
-	time       int              // the total number of minutes in the workday
-	blocks     int              // how many blocks of time in the workday
-	activities []string         // what to do in each block of time
-	cursor     int              // which time block our cursor is pointing at
-	selected   map[int]struct{} // which time blocks are selected
+	time     int              // the total number of minutes in the workday
+	blocks   int              // how many blocks of time in the workday
+	tasks    []string         // what to do in each block of time
+	cursor   int              // which time block our cursor is pointing at
+	selected map[int]struct{} // which time blocks are selected
 
 	textInput textinput.Model
-	editing   bool
+	isEditing bool
 	err       error
+
+	width  int
+	height int
 }
 
 type errMsg error
 
 func initialModel() model {
 	ti := textinput.New()
-	ti.Placeholder = "Enter an activity"
+	ti.Placeholder = "Enter a task"
 	ti.Blur()
 	ti.CharLimit = 156
-	ti.Width = 20
+	ti.Width = blockWidth - 10
+	ti.TextStyle.Background(lipgloss.Color(taskBackgroundColor))
+	ti.PlaceholderStyle.Background(lipgloss.Color(taskBackgroundColor))
+	ti.Cursor.SetMode(cursor.CursorStatic)
 
 	blocks := hoursInDay * blocksPerHour
 	activities := make([]string, blocks)
@@ -48,11 +68,9 @@ func initialModel() model {
 		time: 60 * hoursInDay,
 
 		blocks: blocks,
-		// Our to-do list is a grocery list
-		activities: activities,
+		tasks:  activities,
 
-		// A map which indicates which choices are selected. The keys refer to the indices
-		// of the `activities` slice.
+		// The keys refer to the indices of the `activities` slice.
 		selected: make(map[int]struct{}),
 
 		textInput: ti,
@@ -60,14 +78,10 @@ func initialModel() model {
 	}
 }
 
-// models have 3 methods
-// init
-// update
-// view
-
 func (m model) Init() tea.Cmd {
-	// Just return `nil`, which means "no I/O right now, please."
-	return textinput.Blink
+	// return textinput.Blink
+	// `nil` means "no I/O right now, please."
+	return nil
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -75,91 +89,152 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.textInput, cmd = m.textInput.Update(msg)
 
 	switch msg := msg.(type) {
-	// Is it a key press?
 	case tea.KeyMsg:
 		switch msg.String() {
 
-		case "ctrl+c", "q":
+		case "ctrl+c":
 			return m, tea.Quit
 
-		case "up", "k":
-			if m.cursor > 0 && !m.editing {
-				m.cursor--
+		case "q":
+			if !m.isEditing {
+				return m, tea.Quit
 			}
+
+		case "up", "k":
+			m.cursor = m.moveCursorUp(1)
 
 		case "down", "j":
-			if m.cursor < len(m.activities)-1 && !m.editing {
-				m.cursor++
+			m.cursor = m.moveCursorDown(1)
+
+		// selects a block to move around
+		case "enter":
+			if !m.isEditing {
+				m.toggleSelectedBlock()
 			}
 
-		// The "enter" key and the spacebar toggle
-		// the selected state for the item that the cursor is pointing at.
-		case "enter", " ":
-			_, ok := m.selected[m.cursor]
-			if ok {
-				delete(m.selected, m.cursor)
-			} else {
-				m.selected[m.cursor] = struct{}{}
-			}
+		// insert mode (edit activity text)
 		case "i":
 			if !m.textInput.Focused() {
-				m.textInput.SetValue(m.activities[m.cursor])
+				m.textInput.SetValue(m.tasks[m.cursor])
 				m.textInput.Focus()
-				m.editing = true
+				m.isEditing = true
 			}
+			if m.hasSelectedBlock() {
+				m.toggleSelectedBlock()
+			}
+
+		// visual mode (select a block and expand the length of it)
+		// case "v":
+
+		// return to "normal mode"
 		case "esc":
-			if m.textInput.Focused() {
+			if m.textInput.Focused() || m.isEditing {
 				m.textInput.Blur()
-				m.activities[m.cursor] = m.textInput.Value()
-				m.editing = false
+				m.tasks[m.cursor] = m.textInput.Value()
+				m.isEditing = false
 				m.textInput.Reset()
+			}
+			if m.hasSelectedBlock() {
+				m.toggleSelectedBlock()
 			}
 		}
 
 	case errMsg:
 		m.err = msg
 		return m, nil
+
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
 	}
+
+	m.assertInvariants()
 
 	// Return the updated model to the Bubble Tea runtime
 	return m, cmd
 }
 
 func (m model) View() string {
-	// The header
-	s := "Schedule:\n\n----------------\n"
+	s := "Schedule:\n\n"
 
-	// s += fmt.Sprintf("editing: %v\n", m.editing)
-	// Iterate over our choices
-	for i, activity := range m.activities {
+	for i, task := range m.tasks {
 
-		// Is the cursor pointing at this choice?
 		cursor := " " // no cursor
 		if m.cursor == i {
 			cursor = ">" // cursor!
-			// if m.editing {
-			// s += m.textInput.View()
-			// }
 		}
 
-		// Is this choice selected?
-		// checked := " " // not selected
-		// if _, ok := m.selected[i]; ok {
-		// 	checked = "x" // selected!
-		// }
-
-		// Render the row
-		if m.editing && m.cursor == i {
-			s += fmt.Sprintf("%s\n", m.textInput.View())
+		var block string
+		// fill the block
+		if m.isEditing && m.cursor == i {
+			block = fmt.Sprintf("%s\n", m.textInput.View())
 		} else {
-			s += fmt.Sprintf("%s %s\n", cursor, activity)
+			block = fmt.Sprintf("%s %s\n", cursor, task)
 		}
-		s += "----------------\n"
+
+		if _, ok := m.selected[i]; ok {
+			s += selectedTask.Render(block)
+		} else {
+			s += normalTask.Render(block)
+		}
+
 	}
 
-	// The footer
 	s += "\nPress q to quit.\n"
-
-	// Send the UI for rendering
 	return s
+}
+
+func (m model) moveCursorUp(amount int) int {
+	initial := m.cursor
+	if m.cursor > 0 && !m.isEditing {
+		final := initial - amount
+		m.moveSelectedBlock(initial, final)
+		return final
+	}
+	return initial
+}
+
+func (m model) moveCursorDown(amount int) int {
+	initial := m.cursor
+	if m.cursor < len(m.tasks)-1 && !m.isEditing {
+		final := initial + amount
+		m.moveSelectedBlock(initial, final)
+		return final
+	}
+	return initial
+}
+
+func (m model) moveSelectedBlock(initial, final int) {
+	if _, ok := m.selected[initial]; ok {
+		swapBlocks(m.tasks, initial, final)
+		delete(m.selected, initial)
+		m.selected[final] = struct{}{}
+	}
+}
+
+func swapBlocks(tasks []string, a, b int) {
+	tasks[a], tasks[b] = tasks[b], tasks[a]
+}
+
+func (m model) hasSelectedBlock() bool {
+	_, ok := m.selected[m.cursor]
+	return ok
+}
+
+func (m model) toggleSelectedBlock() {
+	if m.hasSelectedBlock() {
+		delete(m.selected, m.cursor)
+	} else {
+		m.selected[m.cursor] = struct{}{}
+	}
+}
+
+func (m model) assertInvariants() {
+	if len(m.selected) > 1 {
+		panic(fmt.Sprintf("too many elements selected! want 1 have %v", len(m.selected)))
+	}
+
+	if m.hasSelectedBlock() && m.isEditing {
+		panic(fmt.Sprintf("selected block while editing! selected block at index %v. cursor at %v", m.selected, m.cursor))
+	}
 }
