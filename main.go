@@ -11,6 +11,25 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// TODO (rough priority order)
+// soon
+// -[ ] label time blocks with start and end times (based on blocksPerHour)
+// -[ ] "visual mode": expand/contract a task to cover more/fewer blocks
+// -[ ] highlight current time block
+// -[ ] grey out past time blocks
+// later
+// -[ ] specific todo list per task
+// -[ ] autocomplete menu for activities
+// -[ ] undo/redo (+navigable history?)
+// -[ ] copy and paste blocks
+// -[ ] import/export JSON (or something else)
+// -[ ] increase/decrease time resolution (globally and per block)
+// -[ ] configuration
+// -[ ] sqlite persistent storage (store json blobs?)
+// -[ ] navigate through previous days and later days
+// -[ ] pagination/scrolling for small terminal windows
+// -[ ] alternate tabular view
+
 const (
 	hoursInDay = 8
 	// BUG: selections are weird if blocksPerHour is 2 and hoursInDay is 8
