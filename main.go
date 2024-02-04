@@ -18,6 +18,7 @@ import (
 // -[ ] highlight current time block
 // -[ ] grey out past time blocks
 // later
+// -[ ] improve styles
 // -[ ] specific todo list per task
 // -[ ] autocomplete menu for activities
 // -[ ] undo/redo (+navigable history?)
