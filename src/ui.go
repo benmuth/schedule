@@ -7,14 +7,25 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const (
+	selectedBlockBackgroundColor = "4"
+	currentBlockBackgroundColor  = "5"
+)
+
 // styles
 var (
-	normalTask   = lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true)
-	selectedTask = normalTask.Copy().Background(lipgloss.Color(taskBackgroundColor))
+	normalBlock  = lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true).Background(lipgloss.Color("0")).MaxWidth(40).Padding(0, 1, 0).Margin(1, 1, 0)
+	currentBlock = normalBlock.Copy().Background(lipgloss.Color(selectedBlockBackgroundColor))
+	// currentBlock = lipgloss.NewStyle().Border(lipgloss.RoundedBorder(), true, false, true).Background(lipgloss.Color("5")).MaxWidth(40)
+	// selectedBlock = normalBlock.Copy().Background(lipgloss.Color(currentBlockBackgroundColor))
+	selectedBlock = normalBlock.Copy().Background(lipgloss.Color(currentBlockBackgroundColor))
+	// test             = selectedBlock
 )
 
 func (m model) View() string {
 	s := "Schedule"
+
+	currentBlockIdx := m.findCurrentTimeBlock()
 
 	for i, task := range m.tasks {
 		cursor := " " // no cursor
@@ -31,29 +42,22 @@ func (m model) View() string {
 			block += fmt.Sprintf("%s %s\n", cursor, task)
 		}
 
+		// highlight tasks if selected or current time
 		if _, ok := m.selected[i]; ok {
-			s += selectedTask.Render(block)
+			s += selectedBlock.Render(block)
+		} else if i == currentBlockIdx {
+			// s += currentTimeBlock.Render(block)
+			// s += selectedBlock.Render(block)
+			s += currentBlock.Render(block)
 		} else {
-			s += normalTask.Render(block)
+			s += normalBlock.Render(block)
 		}
+
 	}
 
 	s += "\nPress q to quit.\n"
 	s += m.debugInfo()
 	return s
-}
-
-func (m model) resize() {
-	height := int(math.Floor(float64(m.height)/float64(m.numBlocks)) * float64(0.6))
-	if height < 2 {
-		height = 2
-	}
-	width := int(math.Floor(float64(m.width) - float64(float64(m.width)/float64(10))))
-	if width < 20 {
-		width = 20
-	}
-	normalTask.Width(width).Padding(0, 1, 0).Height(height).Margin(1, 1, 0)
-	selectedTask = normalTask.Copy().Background(lipgloss.Color(taskBackgroundColor))
 }
 
 func (m model) showMode() string {
@@ -79,7 +83,8 @@ func (m model) assertInvariants() {
 }
 
 func (m model) debugInfo() string {
-	return fmt.Sprintf("\n%s | height: %v | width: %v \n", m.showMode(), m.height, m.width)
+	hr := m.findCurrentTimeBlock()
+	return fmt.Sprintf("\n%s | height: %v | width: %v | hour: %v \n", m.showMode(), m.height, m.width, hr)
 }
 
 // conv24To12 converts a 24 hour timestamp into a 12 hour clock time string.
@@ -87,6 +92,9 @@ func (m model) debugInfo() string {
 func conv24To12(time24 float64) string {
 	integer, fraction := math.Modf(time24)
 	hrs := int(integer) % 12
+	if hrs == 0 {
+		hrs = 12
+	}
 	mins := math.Floor(fraction * 60)
 
 	var period string
@@ -98,14 +106,23 @@ func conv24To12(time24 float64) string {
 	return fmt.Sprintf("%v:%02v %s", hrs, mins, period)
 }
 
-func makeBlockLabels(numBlocks int) []string {
+func makeBlockLabels(numBlocks, startTime, blocksPerHour int) []string {
 	labels := make([]string, numBlocks)
 
-	time := float64(dayStartTime)
+	time := float64(startTime)
 	interval := float64(1) / float64(blocksPerHour)
 	for i := 0; i < len(labels); i++ {
 		labels[i] = conv24To12(time)
 		time += float64(interval)
 	}
 	return labels
+}
+
+func (m model) findCurrentTimeBlock() int {
+	// hr, _, _ := m.currentTime.Clock()
+	hr := 15 // dummy to stand in for currentTime.Clock()
+
+	idx := hr - dayStartTime
+
+	return idx
 }

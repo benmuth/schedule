@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -15,17 +17,26 @@ const (
 	dayStartTime = 9
 
 	dayEndTime = dayStartTime + hoursInDay
-
-	taskBackgroundColor = "21"
 )
 
 type model struct {
-	time int // the total number of minutes in the workday
+	currentTime time.Time
+
+	timeSpan int // the total number of minutes in the workday
+
 	// NOTE: maybe this can be a constant
-	numBlocks int              // how many blocks of time in the workday
-	tasks     []string         // what to do in each block of time
-	cursor    int              // which time block our cursor is pointing at
-	selected  map[int]struct{} // which time blocks are selected
+	// numBlocks is the number of blocks of time in the workday
+	numBlocks int
+
+	// tasks hold what is scheduled for each block of time. A task
+	// may be scheduled for more than one block.
+	tasks []string
+
+	// cursor indicates which time block our cursor is pointed at
+	cursor int
+
+	// selected holds the selected time blocks
+	selected map[int]struct{}
 
 	textInput textinput.Model
 	// insertMode bool
@@ -50,21 +61,23 @@ func initialModel() model {
 	ti.Blur()
 	ti.CharLimit = 156
 	// ti.Width = 40 - 10
-	ti.TextStyle.Background(lipgloss.Color(taskBackgroundColor))
-	ti.PlaceholderStyle.Background(lipgloss.Color(taskBackgroundColor))
+	ti.TextStyle.Background(lipgloss.Color(selectedBlockBackgroundColor))
+	ti.PlaceholderStyle.Background(lipgloss.Color(selectedBlockBackgroundColor))
 	ti.Cursor.SetMode(cursor.CursorStatic)
 
 	numBlocks := hoursInDay * blocksPerHour
-	labels := makeBlockLabels(numBlocks)
+	labels := makeBlockLabels(numBlocks, dayStartTime, blocksPerHour)
 	activities := make([]string, numBlocks)
 
 	return model{
-		time: 60 * hoursInDay,
+		currentTime: time.Now(),
+
+		timeSpan: 60 * hoursInDay,
 
 		numBlocks: numBlocks,
 		tasks:     activities,
 
-		// The keys refer to the indices of the `activities` slice.
+		// selected is a set containing the indices of the selected activities
 		selected: make(map[int]struct{}),
 
 		textInput: ti,

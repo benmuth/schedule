@@ -10,9 +10,7 @@ import (
 // TODO (rough priority order)
 // soon
 // -[ ] "select mode": expand/contract a task to cover more/fewer blocks
-// -[ ] highlight current time block
 // -[ ] grey out past time blocks
-// -[ ] refactor into separate files
 // later
 // -[ ] improve styles
 // -[ ] specific todo list per task
@@ -28,6 +26,9 @@ import (
 // -[ ] alternate tabular view
 // completed
 // -[x] label time blocks with start and end times (based on blocksPerHour)
+// -[x] refactor into separate files
+// -[x] highlight current time block
+// -[x] fix formatting of current time block
 
 func main() {
 	p := tea.NewProgram(initialModel(), tea.WithAltScreen())

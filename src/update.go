@@ -1,6 +1,15 @@
 package main
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"math"
+	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+type errMsg error
+
+type tickMsg time.Time
 
 const (
 	normalMode = iota
@@ -86,6 +95,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+func (m model) resize() {
+	height := int(math.Floor(float64(m.height)/float64(m.numBlocks)) * float64(0.6))
+	if height < 2 {
+		height = 2
+	}
+	width := int(math.Floor(float64(m.width) - float64(float64(m.width)/float64(10))))
+	if width < 20 {
+		width = 20
+	}
+	normalBlock = normalBlock.Width(width).Height(height)
+	currentBlock = currentBlock.Width(width).Height(height)
+	selectedBlock = selectedBlock.Width(width).Height(height)
+}
+
 func (m model) moveCursorUp(amount int) int {
 	initial := m.cursor
 	if m.cursor > 0 {
@@ -130,5 +153,3 @@ func (m model) toggleSelectedBlock() {
 		m.selected[m.cursor] = struct{}{}
 	}
 }
-
-type errMsg error
