@@ -7,20 +7,16 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-const (
-	selectedBlockBackgroundColor = "4"
-	currentBlockBackgroundColor  = "5"
-)
+var modes = []string{"NOR", "INS", "SEL"}
 
-// styles
-var (
-	normalBlock  = lipgloss.NewStyle().Border(lipgloss.NormalBorder(), false, false, true).Background(lipgloss.Color("0")).MaxWidth(40).Padding(0, 1, 0).Margin(1, 1, 0)
-	currentBlock = normalBlock.Copy().Background(lipgloss.Color(selectedBlockBackgroundColor))
-	// currentBlock = lipgloss.NewStyle().Border(lipgloss.RoundedBorder(), true, false, true).Background(lipgloss.Color("5")).MaxWidth(40)
-	// selectedBlock = normalBlock.Copy().Background(lipgloss.Color(currentBlockBackgroundColor))
-	selectedBlock = normalBlock.Copy().Background(lipgloss.Color(currentBlockBackgroundColor))
-	// test             = selectedBlock
-)
+type styles struct {
+	normalBlock   lipgloss.Style
+	currentBlock  lipgloss.Style
+	selectedBlock lipgloss.Style
+
+	tiTextStyle        lipgloss.Style
+	tiPlaceholderStyle lipgloss.Style
+}
 
 func (m model) View() string {
 	s := "Schedule"
@@ -44,13 +40,11 @@ func (m model) View() string {
 
 		// highlight tasks if selected or current time
 		if _, ok := m.selected[i]; ok {
-			s += selectedBlock.Render(block)
+			s += m.styles.selectedBlock.Render(block)
 		} else if i == currentBlockIdx {
-			// s += currentTimeBlock.Render(block)
-			// s += selectedBlock.Render(block)
-			s += currentBlock.Render(block)
+			s += m.styles.currentBlock.Render(block)
 		} else {
-			s += normalBlock.Render(block)
+			s += m.styles.normalBlock.Render(block)
 		}
 
 	}
@@ -60,31 +54,9 @@ func (m model) View() string {
 	return s
 }
 
-func (m model) showMode() string {
-	switch m.mode {
-	case normalMode:
-		return "NOR"
-	case insertMode:
-		return "INS"
-	case selectMode:
-		return "SEL"
-	}
-	return ""
-}
-
-func (m model) assertInvariants() {
-	if len(m.selected) > 1 {
-		panic(fmt.Sprintf("too many elements selected! want 1 have %v", len(m.selected)))
-	}
-
-	if m.hasSelectedBlock() && m.mode == insertMode {
-		panic(fmt.Sprintf("selected block while editing! selected block at index %v. cursor at %v", m.selected, m.cursor))
-	}
-}
-
 func (m model) debugInfo() string {
 	hr := m.findCurrentTimeBlock()
-	return fmt.Sprintf("\n%s | height: %v | width: %v | hour: %v \n", m.showMode(), m.height, m.width, hr)
+	return fmt.Sprintf("\n%s | height: %v | width: %v | hour: %v \n", modes[m.mode], m.height, m.width, hr)
 }
 
 // conv24To12 converts a 24 hour timestamp into a 12 hour clock time string.
@@ -125,4 +97,31 @@ func (m model) findCurrentTimeBlock() int {
 	idx := hr - dayStartTime
 
 	return idx
+}
+
+func defaultStyles() (s styles) {
+	normalBlockBackgroundColor := "0"
+	selectedBlockBackgroundColor := "4"
+	currentBlockBackgroundColor := "5"
+
+	s.normalBlock = lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder(), false, false, true).
+		Background(lipgloss.Color(normalBlockBackgroundColor)).
+		MaxWidth(40).
+		Padding(0, 1, 0).
+		Margin(1, 1, 0)
+
+	s.currentBlock = s.normalBlock.Copy().
+		Background(lipgloss.Color(selectedBlockBackgroundColor))
+
+	s.selectedBlock = s.normalBlock.Copy().
+		Background(lipgloss.Color(currentBlockBackgroundColor))
+
+	s.tiTextStyle = lipgloss.NewStyle().
+		Background(lipgloss.Color(selectedBlockBackgroundColor))
+
+	s.tiPlaceholderStyle = lipgloss.NewStyle().
+		Background(lipgloss.Color(selectedBlockBackgroundColor))
+
+	return s
 }

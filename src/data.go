@@ -6,7 +6,6 @@ import (
 	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 const (
@@ -47,6 +46,8 @@ type model struct {
 	height int
 
 	blockLabels []string
+
+	styles styles
 }
 
 func (m model) Init() tea.Cmd {
@@ -56,13 +57,14 @@ func (m model) Init() tea.Cmd {
 }
 
 func initialModel() model {
+	styles := defaultStyles()
+
 	ti := textinput.New()
 	ti.Placeholder = "Enter a task"
 	ti.Blur()
 	ti.CharLimit = 156
-	// ti.Width = 40 - 10
-	ti.TextStyle.Background(lipgloss.Color(selectedBlockBackgroundColor))
-	ti.PlaceholderStyle.Background(lipgloss.Color(selectedBlockBackgroundColor))
+	ti.TextStyle.Inherit(styles.tiTextStyle)
+	ti.PlaceholderStyle.Inherit(ti.PlaceholderStyle)
 	ti.Cursor.SetMode(cursor.CursorStatic)
 
 	numBlocks := hoursInDay * blocksPerHour
@@ -84,5 +86,7 @@ func initialModel() model {
 		err:       nil,
 
 		blockLabels: labels,
+
+		styles: styles,
 	}
 }

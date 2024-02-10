@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"time"
 
@@ -104,9 +105,9 @@ func (m model) resize() {
 	if width < 20 {
 		width = 20
 	}
-	normalBlock = normalBlock.Width(width).Height(height)
-	currentBlock = currentBlock.Width(width).Height(height)
-	selectedBlock = selectedBlock.Width(width).Height(height)
+	m.styles.normalBlock = m.styles.normalBlock.Width(width).Height(height)
+	m.styles.currentBlock = m.styles.currentBlock.Width(width).Height(height)
+	m.styles.selectedBlock = m.styles.selectedBlock.Width(width).Height(height)
 }
 
 func (m model) moveCursorUp(amount int) int {
@@ -151,5 +152,16 @@ func (m model) toggleSelectedBlock() {
 		delete(m.selected, m.cursor)
 	} else {
 		m.selected[m.cursor] = struct{}{}
+	}
+}
+
+// HACK: I don't know if this is the best way to do this, but it works for now
+func (m model) assertInvariants() {
+	if len(m.selected) > 1 {
+		panic(fmt.Sprintf("too many elements selected! want 1 have %v", len(m.selected)))
+	}
+
+	if m.hasSelectedBlock() && m.mode == insertMode {
+		panic(fmt.Sprintf("selected block while editing! selected block at index %v. cursor at %v", m.selected, m.cursor))
 	}
 }
