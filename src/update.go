@@ -108,6 +108,7 @@ func (m model) resize() {
 	m.styles.normalBlock = m.styles.normalBlock.Width(width).Height(height)
 	m.styles.currentBlock = m.styles.currentBlock.Width(width).Height(height)
 	m.styles.selectedBlock = m.styles.selectedBlock.Width(width).Height(height)
+	m.styles.pastBlock = m.styles.pastBlock.Width(width).Height(height)
 }
 
 func (m model) moveCursorUp(amount int) int {

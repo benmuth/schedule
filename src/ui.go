@@ -13,6 +13,7 @@ type styles struct {
 	normalBlock   lipgloss.Style
 	currentBlock  lipgloss.Style
 	selectedBlock lipgloss.Style
+	pastBlock     lipgloss.Style
 
 	tiTextStyle        lipgloss.Style
 	tiPlaceholderStyle lipgloss.Style
@@ -43,6 +44,8 @@ func (m model) View() string {
 			s += m.styles.selectedBlock.Render(block)
 		} else if i == currentBlockIdx {
 			s += m.styles.currentBlock.Render(block)
+		} else if i < currentBlockIdx {
+			s += m.styles.pastBlock.Render(block)
 		} else {
 			s += m.styles.normalBlock.Render(block)
 		}
@@ -92,7 +95,7 @@ func makeBlockLabels(numBlocks, startTime, blocksPerHour int) []string {
 
 func (m model) findCurrentTimeBlock() int {
 	// hr, _, _ := m.currentTime.Clock()
-	hr := 15 // dummy to stand in for currentTime.Clock()
+	hr := 12 // dummy to stand in for currentTime.Clock()
 
 	idx := hr - dayStartTime
 
@@ -103,6 +106,8 @@ func defaultStyles() (s styles) {
 	normalBlockBackgroundColor := "0"
 	selectedBlockBackgroundColor := "4"
 	currentBlockBackgroundColor := "5"
+
+	fadedTextColor := "16"
 
 	s.normalBlock = lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder(), false, false, true).
@@ -116,6 +121,9 @@ func defaultStyles() (s styles) {
 
 	s.selectedBlock = s.normalBlock.Copy().
 		Background(lipgloss.Color(currentBlockBackgroundColor))
+
+	s.pastBlock = s.normalBlock.Copy().
+		Foreground(lipgloss.Color(fadedTextColor))
 
 	s.tiTextStyle = lipgloss.NewStyle().
 		Background(lipgloss.Color(selectedBlockBackgroundColor))

@@ -18,12 +18,13 @@ import (
 // -[ ] undo/redo (+navigable history?)
 // -[ ] copy and paste blocks
 // -[ ] import/export JSON (or something else)
-// -[ ] increase/decrease time resolution (globally and per block)
+// -[ ] option to increase/decrease time resolution (globally and per block)
 // -[ ] configuration
 // -[ ] sqlite persistent storage (store json blobs?)
 // -[ ] navigate through previous days and later days
 // -[ ] pagination/scrolling for small terminal windows
 // -[ ] alternate tabular view
+// -[ ] move cursor outside (to the left of) schedule block
 // completed
 // -[x] label time blocks with start and end times (based on blocksPerHour)
 // -[x] refactor into separate files
