@@ -1,19 +1,22 @@
 package main
 
 import (
+	"log/slog"
+	"os"
 	"time"
 
 	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 const (
-	hoursInDay = 8
-	// BUG: selections are weird if blocksPerHour is 2 and hoursInDay is 8
+	hoursInDay = 5
+	// BUG: selections and cursors are weird if there are too many blocks for the screen size
 	blocksPerHour = 1
 
-	dayStartTime = 9
+	dayStartTime = 11
 
 	dayEndTime = dayStartTime + hoursInDay
 )
@@ -35,7 +38,11 @@ type model struct {
 	cursor int
 
 	// selected holds the selected time blocks
+	// selected is a set containing the indices of the selected activities
 	selected map[int]struct{}
+
+	// spans holds the ends of time block spans
+	spans []int
 
 	textInput textinput.Model
 	// insertMode bool
@@ -47,7 +54,13 @@ type model struct {
 
 	blockLabels []string
 
-	styles styles
+	styles *styles
+
+	logger *slog.Logger
+
+	viewport viewport.Model
+
+	ready bool
 }
 
 func (m model) Init() tea.Cmd {
@@ -71,6 +84,21 @@ func initialModel() model {
 	labels := makeBlockLabels(numBlocks, dayStartTime, blocksPerHour)
 	activities := make([]string, numBlocks)
 
+	spans := make([]int, numBlocks)
+	for i := range spans {
+		spans[i] = i
+	}
+
+	f, err := os.Create("../rescheduler.log")
+	if err != nil {
+		panic(err)
+	}
+
+	logger := slog.New(slog.NewTextHandler(f, nil))
+
+	width := 20
+	height := 2
+
 	return model{
 		currentTime: time.Now(),
 
@@ -79,14 +107,20 @@ func initialModel() model {
 		numBlocks: numBlocks,
 		tasks:     activities,
 
-		// selected is a set containing the indices of the selected activities
 		selected: make(map[int]struct{}),
+
+		spans: spans,
 
 		textInput: ti,
 		err:       nil,
 
 		blockLabels: labels,
 
-		styles: styles,
+		styles: &styles,
+
+		logger: logger,
+
+		width:  width,
+		height: height,
 	}
 }

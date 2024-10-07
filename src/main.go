@@ -10,7 +10,6 @@ import (
 // TODO (rough priority order)
 // soon
 // -[ ] "select mode": expand/contract a task to cover more/fewer blocks
-// -[ ] grey out past time blocks
 // later
 // -[ ] improve styles
 // -[ ] specific todo list per task
@@ -26,6 +25,7 @@ import (
 // -[ ] alternate tabular view
 // -[ ] move cursor outside (to the left of) schedule block
 // completed
+// -[x] grey out past time blocks
 // -[x] label time blocks with start and end times (based on blocksPerHour)
 // -[x] refactor into separate files
 // -[x] highlight current time block
