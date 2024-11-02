@@ -135,7 +135,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// m.resize()
 	// normalTask.Width(m.width - (m.width / 10))
 	case configMsg:
-		// m.logger.Error("got config!")
 		m.styles = changeStyles(msg)
 	}
 

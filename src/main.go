@@ -16,6 +16,8 @@ import (
 // - [ ]configuration
 //     - [ ]start/end of work day
 //     - [x]colors
+// - [x]always show 24 hours in the day
+// - [ ]start viewport at configured time
 // later
 // - [ ]improve styles
 // - [ ]specific todo list per task

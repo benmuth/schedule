@@ -12,11 +12,11 @@ import (
 )
 
 const (
-	hoursInDay = 12
+	hoursInDay = 24
 
 	blocksPerHour = 2
 
-	dayStartTime = 8
+	dayStartTime = 0
 )
 
 type model struct {

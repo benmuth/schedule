@@ -29,9 +29,6 @@ func (m model) View() string {
 
 	currentBlockIdx := m.findCurrentTimeBlock()
 
-	// TODO: maybe change this to iterating through spans, since spans
-	// define what makes a visible block
-
 	vpEnd := m.calcVPEnd()
 	for i := m.vpStart; i < vpEnd; i++ {
 		cursorIndicator := " " // no cursor
@@ -152,17 +149,17 @@ func defaultStyles() (s styles) {
 }
 
 func changeStyles(config configMsg) *styles {
-	normalBlockBackgroundColor := config["normalBlockBackgroundColor"]
-	selectedBlockBackgroundColor := config["selectedBlockBackgroundColor "]
-	currentBlockBackgroundColor := config["currentBlockBackgroundColor "]
-	fadedTextColor := config["fadedTextColor "]
+	// normalBlockBackgroundColor := config["normalBlockBackgroundColor"]
+	// selectedBlockBackgroundColor := config["selectedBlockBackgroundColor "]
+	// currentBlockBackgroundColor := config["currentBlockBackgroundColor "]
+	// fadedTextColor := config["fadedTextColor "]
 
 	s := defaultStyles()
 
-	s.normalBlock = s.normalBlock.UnsetBackground().Background(lipgloss.Color(normalBlockBackgroundColor))
-	s.currentBlock = s.currentBlock.UnsetBackground().Background(lipgloss.Color(currentBlockBackgroundColor))
-	s.selectedBlock = s.selectedBlock.UnsetBackground().Background(lipgloss.Color(selectedBlockBackgroundColor))
-	s.pastBlock = s.pastBlock.UnsetBackground().Background(lipgloss.Color(fadedTextColor))
+	// s.normalBlock = s.normalBlock.UnsetBackground().Background(lipgloss.Color(normalBlockBackgroundColor))
+	// s.currentBlock = s.currentBlock.UnsetBackground().Background(lipgloss.Color(currentBlockBackgroundColor))
+	// s.selectedBlock = s.selectedBlock.UnsetBackground().Background(lipgloss.Color(selectedBlockBackgroundColor))
+	// s.pastBlock = s.pastBlock.UnsetBackground().Background(lipgloss.Color(fadedTextColor))
 
 	return &s
 }
