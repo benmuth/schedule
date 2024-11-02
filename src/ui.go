@@ -21,24 +21,22 @@ type styles struct {
 	tiPlaceholderStyle lipgloss.Style
 }
 
-// func (m model) View() string {
-// 	s := "Schedule"
-// 	var block string
-// 	for i := range m.tasks {
-// 		block = fmt.Sprint(m.spans[i])
-// 		s += m.styles.normalBlock.Render(block)
-// 	}
-// 	return s
-// }
-
 func (m model) View() string {
-	s := "Schedule"
+	// TODO: switch to strings.Builder
+	titleStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#FFFDF5")).
+		Background(lipgloss.Color("#25A065")).
+		Padding(0, 1)
+
+	s := titleStyle.Render("Schedule")
 
 	currentBlockIdx := m.findCurrentTimeBlock()
 
 	// TODO: maybe change this to iterating through spans, since spans
 	// define what makes a visible block
-	for i, task := range m.tasks {
+
+	vpEnd := m.calcVPEnd()
+	for i := m.vpStart; i < vpEnd; i++ {
 		cursorIndicator := " " // no cursor
 		if m.cursor == i {
 			cursorIndicator = ">" // cursor!
@@ -46,60 +44,41 @@ func (m model) View() string {
 
 		var block string
 		// fill the block
-		block += fmt.Sprintf("%s\n", m.blockLabels[i])
-		// block += fmt.Sprintf("%v\n", m.spans[i])
+		block += fmt.Sprintf("%s ", m.blockLabels[i])
 
 		if m.mode == insertMode && m.cursor == i {
 			block += fmt.Sprintf("%s\n", m.textInput.View())
 		} else {
-			block += fmt.Sprintf("%s %s\n", cursorIndicator, task)
+			block += fmt.Sprintf("%s %s\n", cursorIndicator, m.tasks[i])
 		}
-
-		blockHeight := int(math.Floor(float64(m.height)/float64(m.numBlocks)) * float64(0.6))
-		if blockHeight < 2 {
-			blockHeight = 2
-		}
-		// *m.height = 2
-		blockWidth := int(math.Floor(float64(m.width) - float64(float64(m.width)/10.0)))
-		if blockWidth < 20 {
-			blockWidth = 20
-		}
-
-		// width := 10
-		// height := 1
-
-		// m.logger.Info("UI", "length", len(s))
-		// s += m.styles.normalBlock.Render(block)
-		// m.logger.Info("UI", "length", len(s))
 
 		// highlight tasks if selected or current time
 		if _, ok := m.selected[i]; ok {
-			s += m.styles.selectedBlock.Width(blockWidth).Height(blockHeight).Render(block)
+			s += m.styles.selectedBlock.Width(m.blockWidth).Height(m.blockHeight).Render(block)
 		} else if i == currentBlockIdx {
-			s += m.styles.currentBlock.Width(blockWidth).Height(blockHeight).Render(block)
+			s += m.styles.currentBlock.Width(m.blockWidth).Height(m.blockHeight).Render(block)
 		} else if i < currentBlockIdx {
-			s += m.styles.pastBlock.Width(blockWidth).Height(blockHeight).Render(block)
+			s += m.styles.pastBlock.Width(m.blockWidth).Height(m.blockHeight).Render(block)
 		} else {
-			s += m.styles.normalBlock.Width(blockWidth).Height(blockHeight).Render(block)
+			s += m.styles.normalBlock.Width(m.blockWidth).Height(m.blockHeight).Render(block)
 		}
-
 	}
 
 	s += "\nPress q to quit.\n"
 	s += m.debugInfo()
+	s += fmt.Sprintf("\nvpend: %v\n", vpEnd)
+
 	return s
 }
 
 func (m model) debugInfo() string {
 	hr := m.findCurrentTimeBlock()
-	return fmt.Sprintf("\n%s | height: %v | width: %v | hour: %v | cursor: %v\n", modes[m.mode], m.height, m.width, hr, m.cursor)
-	// return fmt.Sprintf("\n%s | hour: %v | cursor: %v | tasks len: %v\n", modes[m.mode], hr, m.cursor, len(m.tasks))
+	return fmt.Sprintf("\n%s | height: %v | width: %v | hour: %v | cursor: %v | block height: %v | num blocks: %v \n", modes[m.mode], m.height, m.width, hr, m.cursor, m.blockHeight, m.numBlocks)
 }
 
 // conv24To12 converts a 24 hour timestamp into a 12 hour clock time string.
 // time24 represents the hour of the day and must be between 0.0 and 24.0.
 func conv24To12(time24 float64) string {
-
 	integer, fraction := math.Modf(time24)
 	hrs := int(integer) % 12
 	if hrs == 0 {
@@ -130,7 +109,6 @@ func makeBlockLabels(numBlocks, startTime, blocksPerHour int) []string {
 
 func (m model) findCurrentTimeBlock() int {
 	hr, _, _ := m.currentTime.Clock()
-	// hr := 12 // dummy to stand in for currentTime.Clock()
 
 	idx := hr - dayStartTime
 
@@ -138,21 +116,15 @@ func (m model) findCurrentTimeBlock() int {
 }
 
 func defaultStyles() (s styles) {
-	normalBlockBackgroundColor := "0"
-	// selectedBlockBackgroundColor := "4"
-	selectedBlockBackgroundColor := "8"
-	// currentBlockBackgroundColor := "5"
-	currentBlockBackgroundColor := "20"
-
-	// fadedTextColor := "16"
-	fadedTextColor := "1"
+	normalBlockBackgroundColor := "8"
+	selectedBlockBackgroundColor := "4"
+	currentBlockBackgroundColor := "5"
+	fadedTextColor := "16"
 
 	s.normalBlock = lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder(), false, false, true).
 		Background(lipgloss.Color(normalBlockBackgroundColor)).
 		MaxWidth(40).
-		Padding(0, 1, 0).
-		Margin(1, 1, 0)
+		Margin(1, 0, 0)
 
 	s.currentBlock = s.normalBlock.Copy().
 		Background(lipgloss.Color(selectedBlockBackgroundColor))

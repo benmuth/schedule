@@ -7,24 +7,22 @@ import (
 
 	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 const (
-	hoursInDay = 5
-	// BUG: selections and cursors are weird if there are too many blocks for the screen size
-	blocksPerHour = 1
+	hoursInDay = 12
 
-	dayStartTime = 11
+	blocksPerHour = 2
 
-	dayEndTime = dayStartTime + hoursInDay
+	dayStartTime = 8
 )
 
 type model struct {
+	// TODO: update current time while app is open
 	currentTime time.Time
 
-	timeSpan int // the total number of minutes in the workday
+	// timeSpan int // the total number of minutes in the workday
 
 	// NOTE: maybe this can be a constant
 	// numBlocks is the number of blocks of time in the workday
@@ -45,12 +43,15 @@ type model struct {
 	spans []int
 
 	textInput textinput.Model
-	// insertMode bool
+
 	mode int
 	err  error
 
 	width  int
 	height int
+
+	blockHeight int
+	blockWidth  int
 
 	blockLabels []string
 
@@ -58,13 +59,17 @@ type model struct {
 
 	logger *slog.Logger
 
-	viewport viewport.Model
+	// ready bool
 
-	ready bool
+	// vpStart holds the index of the first time block visible in the terminal window
+	vpStart int
+
+	// vpRange holds the number of time blocks that will be visible in a single window.
+	// It's derived from the window size.
+	vpRange int
 }
 
 func (m model) Init() tea.Cmd {
-	// return textinput.Blink
 	// `nil` means "no I/O right now, please."
 	return nil
 }
@@ -102,8 +107,6 @@ func initialModel() model {
 	return model{
 		currentTime: time.Now(),
 
-		timeSpan: 60 * hoursInDay,
-
 		numBlocks: numBlocks,
 		tasks:     activities,
 
@@ -122,5 +125,7 @@ func initialModel() model {
 
 		width:  width,
 		height: height,
+
+		vpStart: 0,
 	}
 }

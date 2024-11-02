@@ -2,14 +2,16 @@ package main
 
 import (
 	"fmt"
-	"time"
+	"math"
+
+	// "time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type errMsg error
 
-type tickMsg time.Time
+// type tickMsg time.Time
 
 const (
 	normalMode = iota
@@ -36,16 +38,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "up", "k":
 			if m.mode == stretchMode {
-				m.cursor = m.stretch(-1)
+				panic("Not implemented")
 			} else if m.mode != insertMode {
+				initial := m.cursor
 				m.cursor = m.moveCursor(-1)
+				if _, ok := m.selected[initial]; ok {
+					m.moveSelectedBlock(initial, m.cursor)
+				}
+				m.vpStart = m.adjustVPStart()
 			}
 
 		case "down", "j":
 			if m.mode == stretchMode {
-				m.cursor = m.stretch(1)
+				panic("Not implemented")
 			} else if m.mode != insertMode {
+				initial := m.cursor
 				m.cursor = m.moveCursor(1)
+				if _, ok := m.selected[initial]; ok {
+					m.moveSelectedBlock(initial, m.cursor)
+				}
+				m.vpStart = m.adjustVPStart()
 			}
 
 		// selects a block to move around
@@ -106,12 +118,36 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.WindowSizeMsg:
+		// if !m.ready {
 		m.logger.Info("New window size", "width", fmt.Sprintf("%d", msg.Width), "height", fmt.Sprintf("%d", msg.Height))
+
 		m.width = msg.Width
 		m.height = msg.Height
+
+		m.vpRange = m.height / 3
+
+		// TODO: figure out if initialization like this is necessary (look at charmbracelet examples)
+		// m.ready = true
+		// } else {
+		// 	m.width = msg.Width
+		// 	m.height = msg.Height
+		// }
+
 		// m.resize()
 		// normalTask.Width(m.width - (m.width / 10))
 	}
+
+	blockHeight := int(math.Floor(float64(m.height)/float64(m.numBlocks)) * float64(0.1))
+	if blockHeight < 1 {
+		blockHeight = 1
+	}
+	m.blockHeight = blockHeight
+
+	blockWidth := int(math.Floor(float64(m.width) - float64(float64(m.width)/10.0)))
+	if blockWidth < 20 {
+		blockWidth = 20
+	}
+	m.blockWidth = blockWidth
 
 	m.assertInvariants()
 
@@ -119,93 +155,41 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-// func (m model) resize() {
-// 	// height := int(math.Floor(float64(*m.height)/float64(m.numBlocks)) * float64(0.6))
-// 	// if height < 2 {
-// 	// height = 2
-// 	// }
-// 	*m.height = 2
-// 	width := int(math.Floor(float64(*m.width) - float64(float64(*m.width)/float64(10))))
-// 	if width < 20 {
-// 		width = 20
-// 	}
-// 	m.styles.normalBlock = m.styles.normalBlock.Width(width).Height(*m.height)
-// 	m.styles.currentBlock = m.styles.currentBlock.Width(width).Height(*m.height)
-// 	m.styles.selectedBlock = m.styles.selectedBlock.Width(width).Height(*m.height)
-// 	m.styles.pastBlock = m.styles.pastBlock.Width(width).Height(*m.height)
-// }
-
-// stretch extends the current span in the given direction
-// TODO: make this non destructive somehow. maybe push adjacent spans into
-// an overflow buffer on either side of the visible span buffer
-func (m model) stretch(dir int) (finalCursor int) {
-	initialNumber := m.spans[m.cursor]
-	start, end := m.getSpanEnds(m.cursor)
-
-	if dir < 0 {
-		if start > 0 {
-			start += dir
-		}
-		finalCursor = start
-	}
-	if dir > 0 {
-		if end < len(m.spans)-1 {
-			end += dir
-		}
-		finalCursor = end
-	}
-
-	if start >= end {
-		panic(fmt.Sprintf("startAnchor greater than or equal to endAnchor: start %v, end %v\n", start, end))
-	}
-
-	for i := range m.spans {
-		if i >= start && i <= end {
-			m.spans[i] = initialNumber
-		}
-	}
-
-	return
-}
-
-func (m model) getSpanEnds(idx int) (int, int) {
-	initialNumber := m.spans[idx]
-	startAnchor := -1
-	endAnchor := -1
-
-	for i, number := range m.spans {
-		if number == initialNumber {
-			if startAnchor < 0 {
-				startAnchor = i
-			}
-			endAnchor = i
-		}
-	}
-	return startAnchor, endAnchor
-}
-
 func (m model) moveCursor(amount int) int {
-	initial := m.cursor
-	if m.cursor >= 0 && m.cursor <= len(m.tasks)-1 {
-		final := initial + amount
-		if final < 0 {
-			final = 0
-		}
-		if final > len(m.tasks)-1 {
-			final = len(m.tasks) - 1
-		}
-		m.moveSelectedBlock(initial, final)
-		return final
+	newPos := m.cursor + amount
+
+	if newPos < 0 {
+		return 0
 	}
-	return initial
+
+	if newPos > len(m.tasks)-1 {
+		return len(m.tasks) - 1
+	}
+
+	return newPos
+}
+
+func (m model) adjustVPStart() int {
+	if m.cursor < m.vpStart {
+		return m.cursor
+	}
+
+	if m.cursor >= m.calcVPEnd()-1 {
+		m.logger.Error(fmt.Sprintf("cursor: %v, vpStart: %v, vpEnd: %v, vpRange: %v", m.cursor, m.vpStart, m.calcVPEnd(), m.vpRange))
+		return max(m.cursor-m.vpRange+1, 0)
+	}
+	// no change
+	return m.vpStart
+}
+
+func (m model) calcVPEnd() int {
+	return min(m.vpStart+m.vpRange, m.numBlocks)
 }
 
 func (m model) moveSelectedBlock(initial, final int) {
-	if _, ok := m.selected[initial]; ok {
-		swapBlocks(m.tasks, initial, final)
-		delete(m.selected, initial)
-		m.selected[final] = struct{}{}
-	}
+	swapBlocks(m.tasks, initial, final)
+	delete(m.selected, initial)
+	m.selected[final] = struct{}{}
 }
 
 func swapBlocks(tasks []string, a, b int) {
@@ -225,7 +209,7 @@ func (m model) toggleSelectedBlock() {
 	}
 }
 
-// HACK: I don't know if this is the best way to do this, but it works for now
+// HACK: Probably not the best way to do this, but it works for now
 // Enforce simple invariants about the model on each update loop
 func (m model) assertInvariants() {
 	if len(m.selected) > 1 {
@@ -234,5 +218,13 @@ func (m model) assertInvariants() {
 
 	if m.blockIsSelected() && m.mode == insertMode {
 		panic(fmt.Sprintf("selected block while editing! selected block at index %v. cursor at %v", m.selected, m.cursor))
+	}
+
+	if m.vpRange <= 0 {
+		panic(fmt.Sprintf("vpRange too small: %v", m.vpRange))
+	}
+
+	if m.calcVPEnd() < 0 || m.calcVPEnd() > m.numBlocks {
+		panic(fmt.Sprintf("invalid vp end: %v", m.calcVPEnd()))
 	}
 }
