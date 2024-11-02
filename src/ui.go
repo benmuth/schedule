@@ -19,16 +19,13 @@ type styles struct {
 
 	tiTextStyle        lipgloss.Style
 	tiPlaceholderStyle lipgloss.Style
+
+	titleStyle lipgloss.Style
 }
 
 func (m model) View() string {
 	// TODO: switch to strings.Builder
-	titleStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#FFFDF5")).
-		Background(lipgloss.Color("#25A065")).
-		Padding(0, 1)
-
-	s := titleStyle.Render("Schedule")
+	s := m.styles.titleStyle.Render("Schedule")
 
 	currentBlockIdx := m.findCurrentTimeBlock()
 
@@ -146,5 +143,26 @@ func defaultStyles() (s styles) {
 	s.tiPlaceholderStyle = lipgloss.NewStyle().
 		Background(lipgloss.Color(selectedBlockBackgroundColor))
 
+	s.titleStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#FFFDF5")).
+		Background(lipgloss.Color("#25A065")).
+		Padding(0, 1)
+
 	return s
+}
+
+func changeStyles(config configMsg) *styles {
+	normalBlockBackgroundColor := config["normalBlockBackgroundColor"]
+	selectedBlockBackgroundColor := config["selectedBlockBackgroundColor "]
+	currentBlockBackgroundColor := config["currentBlockBackgroundColor "]
+	fadedTextColor := config["fadedTextColor "]
+
+	s := defaultStyles()
+
+	s.normalBlock = s.normalBlock.UnsetBackground().Background(lipgloss.Color(normalBlockBackgroundColor))
+	s.currentBlock = s.currentBlock.UnsetBackground().Background(lipgloss.Color(currentBlockBackgroundColor))
+	s.selectedBlock = s.selectedBlock.UnsetBackground().Background(lipgloss.Color(selectedBlockBackgroundColor))
+	s.pastBlock = s.pastBlock.UnsetBackground().Background(lipgloss.Color(fadedTextColor))
+
+	return &s
 }

@@ -27,7 +27,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-
 		case "ctrl+c":
 			return m, tea.Quit
 
@@ -126,15 +125,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.vpRange = m.height / 3
 
-		// TODO: figure out if initialization like this is necessary (look at charmbracelet examples)
-		// m.ready = true
-		// } else {
-		// 	m.width = msg.Width
-		// 	m.height = msg.Height
-		// }
+	// TODO: figure out if initialization like this is necessary (look at charmbracelet examples)
+	// m.ready = true
+	// } else {
+	// 	m.width = msg.Width
+	// 	m.height = msg.Height
+	// }
 
-		// m.resize()
-		// normalTask.Width(m.width - (m.width / 10))
+	// m.resize()
+	// normalTask.Width(m.width - (m.width / 10))
+	case configMsg:
+		// m.logger.Error("got config!")
+		m.styles = changeStyles(msg)
 	}
 
 	blockHeight := int(math.Floor(float64(m.height)/float64(m.numBlocks)) * float64(0.1))

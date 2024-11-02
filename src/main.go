@@ -12,7 +12,10 @@ import (
 // - [ ]"select mode":
 //     - move cursor around to highlight a chunk of blocks
 //     - exit select mode to keep only the time stamp of the first block
+//     - shift all affected blocks later
 // - [ ]configuration
+//     - [ ]start/end of work day
+//     - [x]colors
 // later
 // - [ ]improve styles
 // - [ ]specific todo list per task
@@ -29,6 +32,7 @@ import (
 // - [ ]check boxes
 // - [ ]day analysis (how many tasks checked off?)
 // - [ ]color scheme/schemes
+// - [ ]update time live (as a bubbletea Cmd)
 // completed
 // - [x]implement scrolling
 // - [x]grey out past time blocks

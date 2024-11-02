@@ -3,6 +3,7 @@ package main
 import (
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/cursor"
@@ -71,7 +72,30 @@ type model struct {
 
 func (m model) Init() tea.Cmd {
 	// `nil` means "no I/O right now, please."
-	return nil
+	return readConfig
+}
+
+type configMsg map[string]string
+
+func readConfig() tea.Msg {
+	contents, err := os.ReadFile("../config.ini")
+	if err != nil {
+		panic(err)
+	}
+	lines := strings.Split(string(contents), "\n")
+	config := make(configMsg)
+	for i := range lines {
+		if len(lines[i]) < 3 {
+			continue
+		}
+		key, val, found := strings.Cut(lines[i], "=")
+		if !found {
+			panic("Invalid line in config")
+		}
+
+		config[strings.TrimSpace(key)] = strings.TrimSpace(val)
+	}
+	return config
 }
 
 func initialModel() model {
