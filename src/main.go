@@ -13,9 +13,6 @@ import (
 //     - move cursor around to highlight a chunk of blocks
 //     - exit select mode to keep only the time stamp of the first block
 //     - shift all affected blocks later
-// - [ ]configuration
-//     - [x]start/end of work day
-//     - [ ]colors
 // - [ ]start viewport at configured time
 // later
 // - [ ]on startup, start viewport and cursor at current hour by default
@@ -37,6 +34,9 @@ import (
 // - [ ]update time live (as a bubbletea Cmd)
 // - [ ]function to convert timeMsg to timestamp
 // completed
+// - [x]configuration
+//     - [x]start/end of work day
+//     - [x]colors
 // - [x]check current time with bubbleTea command
 // - [x]always show 24 hours in the day
 // - [x]implement scrolling
