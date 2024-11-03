@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"strconv"
 
 	// "time"
 
@@ -122,6 +123,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// normalTask.Width(m.width - (m.width / 10))
 	case configMsg:
 		m.styles = changeStyles(msg)
+		var err error
+		m.dayStartBlock, err = strconv.Atoi(msg["dayStartBlock"])
+		if err != nil {
+			panic(err)
+		}
+		m.dayLengthHrs, err = strconv.Atoi(msg["dayLengthHrs"])
+		if err != nil {
+			panic(err)
+		}
+
 	case timeMsg:
 		m.currentTime = msg
 	}

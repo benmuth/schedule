@@ -64,6 +64,10 @@ type model struct {
 	// vpRange holds the number of time blocks that will be visible in a single window.
 	// It's derived from the window size.
 	vpRange int
+
+	dayStartBlock int
+
+	dayLengthHrs int
 }
 
 func (m model) Init() tea.Cmd {
@@ -163,5 +167,9 @@ func initialModel() model {
 		height: height,
 
 		vpStart: 0,
+
+		dayStartBlock: 16,
+
+		dayLengthHrs: 8,
 	}
 }

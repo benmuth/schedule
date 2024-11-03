@@ -14,11 +14,11 @@ import (
 //     - exit select mode to keep only the time stamp of the first block
 //     - shift all affected blocks later
 // - [ ]configuration
-//     - [ ]start/end of work day
-//     - [x]colors
+//     - [x]start/end of work day
+//     - [ ]colors
 // - [ ]start viewport at configured time
-// - [ ]function to convert timeMsg to timestamp
 // later
+// - [ ]on startup, start viewport and cursor at current hour by default
 // - [ ]improve styles
 // - [ ]specific todo list per task
 // - [ ]autocomplete menu for activities
@@ -35,6 +35,7 @@ import (
 // - [ ]day analysis (how many tasks checked off?)
 // - [ ]color scheme/schemes
 // - [ ]update time live (as a bubbletea Cmd)
+// - [ ]function to convert timeMsg to timestamp
 // completed
 // - [x]check current time with bubbleTea command
 // - [x]always show 24 hours in the day

@@ -16,6 +16,7 @@ type styles struct {
 	selectedBlock lipgloss.Style
 	pastBlock     lipgloss.Style
 	stretchDebug  lipgloss.Style
+	workdayBlock  lipgloss.Style
 
 	tiTextStyle        lipgloss.Style
 	tiPlaceholderStyle lipgloss.Style
@@ -46,16 +47,25 @@ func (m model) View() string {
 			block += fmt.Sprintf("%s %s\n", cursorIndicator, m.tasks[i])
 		}
 
+		var style lipgloss.Style
+
 		// highlight tasks if selected or current time
 		if _, ok := m.selected[i]; ok {
-			s += m.styles.selectedBlock.Width(m.blockWidth).Height(m.blockHeight).Render(block)
+			style = m.styles.selectedBlock.Copy()
 		} else if i == currentBlockIdx {
-			s += m.styles.currentBlock.Width(m.blockWidth).Height(m.blockHeight).Render(block)
+			style = m.styles.currentBlock.Copy()
 		} else if i < currentBlockIdx {
-			s += m.styles.pastBlock.Width(m.blockWidth).Height(m.blockHeight).Render(block)
+			style = m.styles.pastBlock.Copy()
 		} else {
-			s += m.styles.normalBlock.Width(m.blockWidth).Height(m.blockHeight).Render(block)
+			style = m.styles.normalBlock.Copy()
 		}
+
+		if i >= m.dayStartBlock && i < (m.dayStartBlock+(m.dayLengthHrs*2)) {
+			style = m.styles.workdayBlock.Copy()
+		}
+
+		s += style.Width(m.blockWidth).
+			Height(m.blockHeight).Render(block)
 	}
 
 	s += "\nPress q to quit.\n"
@@ -105,6 +115,7 @@ func defaultStyles() (s styles) {
 	selectedBlockBackgroundColor := "4"
 	currentBlockBackgroundColor := "5"
 	fadedTextColor := "16"
+	workdayBlockColor := "1"
 
 	s.normalBlock = lipgloss.NewStyle().
 		Background(lipgloss.Color(normalBlockBackgroundColor)).
@@ -119,6 +130,9 @@ func defaultStyles() (s styles) {
 
 	s.pastBlock = s.normalBlock.Copy().
 		Foreground(lipgloss.Color(fadedTextColor))
+
+	s.workdayBlock = s.normalBlock.Copy().
+		Background(lipgloss.Color(workdayBlockColor))
 
 	s.stretchDebug = s.normalBlock.Copy().
 		UnsetBorderBottom().
@@ -151,6 +165,5 @@ func changeStyles(config configMsg) *styles {
 	// s.currentBlock = s.currentBlock.UnsetBackground().Background(lipgloss.Color(currentBlockBackgroundColor))
 	// s.selectedBlock = s.selectedBlock.UnsetBackground().Background(lipgloss.Color(selectedBlockBackgroundColor))
 	// s.pastBlock = s.pastBlock.UnsetBackground().Background(lipgloss.Color(fadedTextColor))
-
 	return &s
 }
