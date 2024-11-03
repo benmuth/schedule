@@ -135,6 +135,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case timeMsg:
 		m.currentTime = msg
+		currentTimeIdx := blockIdxFromTime(msg)
+		m.vpStart = currentTimeIdx
+		m.cursor = currentTimeIdx
 	}
 
 	blockHeight := int(math.Floor(float64(m.height)/float64(m.numBlocks)) * float64(0.1))

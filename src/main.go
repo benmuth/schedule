@@ -15,7 +15,6 @@ import (
 //     - shift all affected blocks later
 // - [ ]start viewport at configured time
 // later
-// - [ ]on startup, start viewport and cursor at current hour by default
 // - [ ]improve styles
 // - [ ]specific todo list per task
 // - [ ]autocomplete menu for activities
@@ -34,6 +33,7 @@ import (
 // - [ ]update time live (as a bubbletea Cmd)
 // - [ ]function to convert timeMsg to timestamp
 // completed
+// - [x]on startup, start viewport and cursor at current hour by default
 // - [x]configuration
 //     - [x]start/end of work day
 //     - [x]colors
