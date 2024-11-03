@@ -27,7 +27,7 @@ func (m model) View() string {
 	// TODO: switch to strings.Builder
 	s := m.styles.titleStyle.Render("Schedule")
 
-	currentBlockIdx := m.findCurrentTimeBlock()
+	currentBlockIdx := blockIdxFromTime(m.currentTime)
 
 	vpEnd := m.calcVPEnd()
 	for i := m.vpStart; i < vpEnd; i++ {
@@ -66,8 +66,7 @@ func (m model) View() string {
 }
 
 func (m model) debugInfo() string {
-	hr := m.findCurrentTimeBlock()
-	return fmt.Sprintf("\n%s | height: %v | width: %v | hour: %v | cursor: %v | block height: %v | num blocks: %v \n", modes[m.mode], m.height, m.width, hr, m.cursor, m.blockHeight, m.numBlocks)
+	return fmt.Sprintf("\n%s | height: %v | width: %v | hour: %v | cursor: %v | block height: %v | num blocks: %v \n", modes[m.mode], m.height, m.width, m.currentTime, m.cursor, m.blockHeight, m.numBlocks)
 }
 
 // conv24To12 converts a 24 hour timestamp into a 12 hour clock time string.
@@ -89,24 +88,16 @@ func conv24To12(time24 float64) string {
 	return fmt.Sprintf("%v:%02v %s", hrs, mins, period)
 }
 
-func makeBlockLabels(numBlocks, startTime, blocksPerHour int) []string {
+func makeBlockLabels(numBlocks, blocksPerHour int) []string {
 	labels := make([]string, numBlocks)
 
-	time := float64(startTime)
+	time := 0.0
 	interval := float64(1) / float64(blocksPerHour)
 	for i := 0; i < len(labels); i++ {
 		labels[i] = conv24To12(time)
 		time += float64(interval)
 	}
 	return labels
-}
-
-func (m model) findCurrentTimeBlock() int {
-	hr, _, _ := m.currentTime.Clock()
-
-	idx := hr - dayStartTime
-
-	return idx
 }
 
 func defaultStyles() (s styles) {

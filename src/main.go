@@ -16,8 +16,8 @@ import (
 // - [ ]configuration
 //     - [ ]start/end of work day
 //     - [x]colors
-// - [x]always show 24 hours in the day
 // - [ ]start viewport at configured time
+// - [ ]function to convert timeMsg to timestamp
 // later
 // - [ ]improve styles
 // - [ ]specific todo list per task
@@ -36,6 +36,8 @@ import (
 // - [ ]color scheme/schemes
 // - [ ]update time live (as a bubbletea Cmd)
 // completed
+// - [x]check current time with bubbleTea command
+// - [x]always show 24 hours in the day
 // - [x]implement scrolling
 // - [x]grey out past time blocks
 // - [x]label time blocks with start and end times (based on blocksPerHour)

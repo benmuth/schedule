@@ -11,8 +11,6 @@ import (
 
 type errMsg error
 
-// type tickMsg time.Time
-
 const (
 	normalMode = iota
 	insertMode
@@ -86,17 +84,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.mode = normalMode
 			}
-			// implementation notes:
-			// - have some sort of data in model that represents a contiguous
-			// span of time, probably just a start and end index.
-			// - stretch mode should have its own color
-			// - adjacent blocks that are part of the same stretch should have
-			// no gap in between them
-			// - only the first block of a stretch should display the time. The
-			// end time will be shown by the block after the stretch
-			// - "selecting" a stretched block moves it just as a normal block
-			// - when changing the span of a stretch, going above the "anchor"
-			// block just extends the stretch upwards
 
 		// return to "normal mode"
 		case "esc":
@@ -117,7 +104,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.WindowSizeMsg:
-		// if !m.ready {
 		m.logger.Info("New window size", "width", fmt.Sprintf("%d", msg.Width), "height", fmt.Sprintf("%d", msg.Height))
 
 		m.width = msg.Width
@@ -125,7 +111,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		m.vpRange = m.height / 3
 
-	// TODO: figure out if initialization like this is necessary (look at charmbracelet examples)
+	// TODO: figure out if initialization like this is necessary (look at bubbletea examples)
 	// m.ready = true
 	// } else {
 	// 	m.width = msg.Width
@@ -136,6 +122,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// normalTask.Width(m.width - (m.width / 10))
 	case configMsg:
 		m.styles = changeStyles(msg)
+	case timeMsg:
+		m.currentTime = msg
 	}
 
 	blockHeight := int(math.Floor(float64(m.height)/float64(m.numBlocks)) * float64(0.1))
@@ -152,7 +140,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	m.assertInvariants()
 
-	// Return the updated model to the Bubble Tea runtime
 	return m, cmd
 }
 

@@ -15,15 +15,11 @@ const (
 	hoursInDay = 24
 
 	blocksPerHour = 2
-
-	dayStartTime = 0
 )
 
 type model struct {
 	// TODO: update current time while app is open
-	currentTime time.Time
-
-	// timeSpan int // the total number of minutes in the workday
+	currentTime timeMsg
 
 	// NOTE: maybe this can be a constant
 	// numBlocks is the number of blocks of time in the workday
@@ -71,11 +67,16 @@ type model struct {
 }
 
 func (m model) Init() tea.Cmd {
-	// `nil` means "no I/O right now, please."
-	return readConfig
+	return tea.Batch(readConfig, checkTime)
 }
 
 type configMsg map[string]string
+
+type timeMsg struct {
+	h int
+	m int
+	s int
+}
 
 func readConfig() tea.Msg {
 	contents, err := os.ReadFile("../config.ini")
@@ -98,6 +99,19 @@ func readConfig() tea.Msg {
 	return config
 }
 
+func checkTime() tea.Msg {
+	hr, min, s := time.Now().Clock()
+	return timeMsg{hr, min, s}
+}
+
+func blockIdxFromTime(tm timeMsg) int {
+	idx := tm.h * 2
+	if tm.m >= 30 {
+		idx++
+	}
+	return idx
+}
+
 func initialModel() model {
 	styles := defaultStyles()
 
@@ -110,7 +124,7 @@ func initialModel() model {
 	ti.Cursor.SetMode(cursor.CursorStatic)
 
 	numBlocks := hoursInDay * blocksPerHour
-	labels := makeBlockLabels(numBlocks, dayStartTime, blocksPerHour)
+	labels := makeBlockLabels(numBlocks, blocksPerHour)
 	activities := make([]string, numBlocks)
 
 	spans := make([]int, numBlocks)
@@ -129,8 +143,6 @@ func initialModel() model {
 	height := 2
 
 	return model{
-		currentTime: time.Now(),
-
 		numBlocks: numBlocks,
 		tasks:     activities,
 
